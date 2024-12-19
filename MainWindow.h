@@ -7,7 +7,7 @@
 #include <filesystem>
 #include <QString>
 
-#include "TinyExif.h"
+#include "includes/TinyExif.h"
 
 
 QT_BEGIN_NAMESPACE

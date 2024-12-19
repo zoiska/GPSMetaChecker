@@ -27,10 +27,10 @@ find_package(Qt6 COMPONENTS
 #link_directories("C:/exiv2extract/exiv2-0.28.3-2019msvc64/lib")
 
 add_executable(GPSMetaChecker main.cpp
-        TinyEXIF.h
-        TinyEXIF.cpp
-        tinyxml2.cpp
-        tinyxml2.h
+        includes/TinyEXIF.h
+        includes/TinyEXIF.cpp
+        includes/tinyxml2.cpp
+        includes/tinyxml2.h
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
