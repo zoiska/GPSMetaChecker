@@ -8,13 +8,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 set(CMAKE_PREFIX_PATH "C:/Qt/6.6.1/mingw_64")
-#set(exiv2_DIR "C:/exiv2extract/exiv2-0.28.3-2019msvc64/lib/cmake/exiv2")
-#set(EXPAT_INCLUDE_DIR "C:/user/zoisk/.vcpkg-clion")
 
-#include_directories("C:/exiv2extract/exiv2-0.28.3-2019msvc64/include")
-
-
-#find_package(exiv2 CONFIG REQUIRED)
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
@@ -24,23 +18,33 @@ find_package(Qt6 COMPONENTS
         Widgets
         REQUIRED)
 
-#link_directories("C:/exiv2extract/exiv2-0.28.3-2019msvc64/lib")
-
-add_executable(GPSMetaChecker main.cpp
-        includes/TinyEXIF.h
-        includes/TinyEXIF.cpp
-        includes/tinyxml2.cpp
-        includes/tinyxml2.h
-        mainwindow.cpp
-        mainwindow.h
-        mainwindow.ui
-)
+if (WIN32)
+    #set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/resources.rc")
+    add_executable(GPSMetaChecker WIN32 main.cpp ${app_icon_resource_windows}
+            includes/TinyEXIF.h
+            includes/TinyEXIF.cpp
+            includes/tinyxml2.cpp
+            includes/tinyxml2.h
+            mainwindow.cpp
+            mainwindow.h
+            mainwindow.ui
+    )
+else ()
+    add_executable(GPSMetaChecker main.cpp
+            includes/TinyEXIF.h
+            includes/TinyEXIF.cpp
+            includes/tinyxml2.cpp
+            includes/tinyxml2.h
+            mainwindow.cpp
+            mainwindow.h
+            mainwindow.ui
+    )
+endif ()
 
 target_link_libraries(GPSMetaChecker PRIVATE
         Qt::Core
         Qt::Gui
         Qt::Widgets
-#        C:/exiv2extract/exiv2-0.28.3-2019msvc64/lib/exiv2.lib
 )
 
 

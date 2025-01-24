@@ -25,8 +25,10 @@ private:
     Ui::MainWindow *ui;
     bool checkCoords(const std::string& filePath);
     void processFolder();
+    std::wstring OpenFolderDialog();
+    void deleteMarked();
 
-    std::string path;
+    std::vector<std::string> imagePaths;
 };
 
 
