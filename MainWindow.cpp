@@ -6,17 +6,19 @@
 #include <string>
 #include <QFile>
 #include <QString>
+#include <QPixmap>
+#include <QImageReader>
 
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
 
-    connect(ui->button_openFileDialog, &QPushButton::clicked, this, &MainWindow::processFolder);
-    connect(ui->button_run, &QPushButton::clicked, this, &MainWindow::deleteMarked);
-
     ui->label_output->clear();
     ui->label_directory->clear();
+
+    connect(ui->button_openFileDialog, &QPushButton::clicked, this, &MainWindow::processFolder);
+    connect(ui->button_run, &QPushButton::clicked, this, &MainWindow::deleteMarked);
 }
 
 MainWindow::~MainWindow() {
@@ -24,10 +26,8 @@ MainWindow::~MainWindow() {
 }
 
 bool MainWindow::checkCoords(const std::string& filePath) {
-
     std::ifstream file(filePath, std::ios::binary);
     if (!file.is_open()) {
-        char delimiter = '\\';
         size_t delim_position = filePath.rfind(delimiter);
         ui->label_output->setText(ui->label_output->text() + "\nError: Could not open file \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"");
         return false;
@@ -38,7 +38,6 @@ bool MainWindow::checkCoords(const std::string& filePath) {
 
     TinyEXIF::EXIFInfo exif(data.data(), data.size());
     if (!exif.Fields) {
-        char delimiter = '\\';
         size_t delim_position = filePath.rfind(delimiter);
         ui->label_output->setText(ui->label_output->text() + "\nNo EXIF data found in file \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"");
         return true;
@@ -46,7 +45,6 @@ bool MainWindow::checkCoords(const std::string& filePath) {
 
     if (exif.GeoLocation.hasLatLon()) {
         if (exif.GeoLocation.Latitude == 0.0 && exif.GeoLocation.Longitude == 0.0) {
-            char delimiter = '\\';
             size_t delim_position = filePath.rfind(delimiter);
             ui->label_output->setText(ui->label_output->text() + "\nInvalid GPS data found in: \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"");
             return true;
@@ -54,7 +52,6 @@ bool MainWindow::checkCoords(const std::string& filePath) {
         return false;
     }
 
-    char delimiter = '\\';
     size_t delim_position = filePath.rfind(delimiter);
     ui->label_output->setText(ui->label_output->text() + "\nNo GPS data found in: \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"");
     return true;
@@ -76,7 +73,25 @@ void MainWindow::processFolder() {
                 if (extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".PNG" || extension == ".JPG" || extension == ".JPEG") {
                     if (checkCoords(filePath)) {
                         imagePaths.push_back(filePath);
-                        char delimiter = '\\';
+
+
+                        // FUCKING QT JPEG, JPG FORMATS NOT WORKING ?????
+
+
+                        QImageReader reader(QString::fromStdString(filePath));
+
+                        QImage img = reader.read();
+                        img = img.convertToFormat(QImage::Format_RGB32);
+                        if (!img.isNull()) {
+                            QPixmap scaledPixmap = QPixmap::fromImage(img).scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                            auto *item = new QListWidgetItem(QIcon(scaledPixmap), QString::fromStdString(filePath));
+                            item->setData(Qt::UserRole, QString::fromStdString(filePath));
+                            ui->listWidget->addItem(item);
+                        }
+                        else {
+                            size_t delim_position = filePath.rfind(delimiter);
+                            ui->label_output->setText(ui->label_output->text() + "\nCannot image preview: \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"\n");
+                        }
                         size_t delim_position = filePath.rfind(delimiter);
                         ui->label_output->setText(ui->label_output->text() + "\nAdding for deletion: \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"\n");
                     }
@@ -128,8 +143,7 @@ std::wstring MainWindow::OpenFolderDialog() {
 
 void MainWindow::deleteMarked() {
     if (!imagePaths.empty()) {
-        char delimiter = '\\';
-                for (const auto& path : imagePaths) {
+        for (const auto& path : imagePaths) {
             QString qPath = QString::fromStdString(path);
             QFile::moveToTrash(qPath);
             size_t delim_position = qPath.toStdString().rfind(delimiter);

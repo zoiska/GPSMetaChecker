@@ -29,6 +29,7 @@ private:
     void deleteMarked();
 
     std::vector<std::string> imagePaths;
+    char delimiter = '\\';
 };
 
 
