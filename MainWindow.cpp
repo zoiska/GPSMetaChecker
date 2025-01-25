@@ -6,7 +6,6 @@
 #include <string>
 #include <QFile>
 #include <QString>
-#include <QPixmap>
 #include <QImageReader>
 
 
@@ -29,7 +28,7 @@ bool MainWindow::checkCoords(const std::string& filePath) {
     std::ifstream file(filePath, std::ios::binary);
     if (!file.is_open()) {
         size_t delim_position = filePath.rfind(delimiter);
-        ui->label_output->setText(ui->label_output->text() + "\nError: Could not open file \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"");
+        ui->label_output->setText(ui->label_output->text() + "Error: Could not open file \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"\n");
         return false;
     }
 
@@ -39,21 +38,21 @@ bool MainWindow::checkCoords(const std::string& filePath) {
     TinyEXIF::EXIFInfo exif(data.data(), data.size());
     if (!exif.Fields) {
         size_t delim_position = filePath.rfind(delimiter);
-        ui->label_output->setText(ui->label_output->text() + "\nNo EXIF data found in file \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"");
+        ui->label_output->setText(ui->label_output->text() + "No EXIF data found in file \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"\n");
         return true;
     }
 
     if (exif.GeoLocation.hasLatLon()) {
         if (exif.GeoLocation.Latitude == 0.0 && exif.GeoLocation.Longitude == 0.0) {
             size_t delim_position = filePath.rfind(delimiter);
-            ui->label_output->setText(ui->label_output->text() + "\nInvalid GPS data found in: \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"");
+            ui->label_output->setText(ui->label_output->text() + "Invalid GPS data found in: \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"\n");
             return true;
         }
         return false;
     }
 
     size_t delim_position = filePath.rfind(delimiter);
-    ui->label_output->setText(ui->label_output->text() + "\nNo GPS data found in: \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"");
+    ui->label_output->setText(ui->label_output->text() + "No GPS data found in: \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"\n");
     return true;
 }
 
@@ -70,37 +69,28 @@ void MainWindow::processFolder() {
                 const auto& filePath = entry.path().string();
 
                 std::string extension = entry.path().extension().string();
-                if (extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".PNG" || extension == ".JPG" || extension == ".JPEG") {
+                if (extension == ".jpg" || extension == ".jpeg" || extension == ".JPG" || extension == ".JPEG" || extension == ".png" || extension == ".PNG") {
                     if (checkCoords(filePath)) {
                         imagePaths.push_back(filePath);
 
-
-                        // FUCKING QT JPEG, JPG FORMATS NOT WORKING ?????
-
-
-                        QImageReader reader(QString::fromStdString(filePath));
-
-                        QImage img = reader.read();
-                        img = img.convertToFormat(QImage::Format_RGB32);
-                        if (!img.isNull()) {
-                            QPixmap scaledPixmap = QPixmap::fromImage(img).scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-                            auto *item = new QListWidgetItem(QIcon(scaledPixmap), QString::fromStdString(filePath));
+                        if (!filePath.empty()) {
+                            auto *item = new QListWidgetItem(QIcon(QString::fromStdString(filePath)), QString::fromStdString(filePath));
                             item->setData(Qt::UserRole, QString::fromStdString(filePath));
                             ui->listWidget->addItem(item);
                         }
                         else {
                             size_t delim_position = filePath.rfind(delimiter);
-                            ui->label_output->setText(ui->label_output->text() + "\nCannot image preview: \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"\n");
+                            ui->label_output->setText(ui->label_output->text() + "Cannot image preview: \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"\n\n");
                         }
                         size_t delim_position = filePath.rfind(delimiter);
-                        ui->label_output->setText(ui->label_output->text() + "\nAdding for deletion: \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"\n");
+                        ui->label_output->setText(ui->label_output->text() + "Adding for deletion: \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"\n\n");
                     }
                 }
             }
         }
     }
     else {
-        ui->label_output->setText(ui->label_output->text() + "\n" + "Error: Invalid path.");
+        ui->label_output->setText(ui->label_output->text() + "Error: Invalid path.\n");
     }
 }
 
@@ -147,10 +137,10 @@ void MainWindow::deleteMarked() {
             QString qPath = QString::fromStdString(path);
             QFile::moveToTrash(qPath);
             size_t delim_position = qPath.toStdString().rfind(delimiter);
-            ui->label_output->setText(ui->label_output->text() + "\nDeleting file: \"" + QString::fromStdString((delim_position != std::string::npos) ? qPath.toStdString().substr(delim_position + 1) : "") + "\"\n");
+            ui->label_output->setText(ui->label_output->text() + "Deleting file: \"" + QString::fromStdString((delim_position != std::string::npos) ? qPath.toStdString().substr(delim_position + 1) : "") + "\"\n\n");
         }
     }
     else {
-        ui->label_output->setText(ui->label_output->text() + "Error: Vector is empty.");
+        ui->label_output->setText(ui->label_output->text() + "Error: Vector is empty.\n");
     }
 }
