@@ -6,6 +6,13 @@
 #include <fstream>
 #include <filesystem>
 #include <QString>
+#include <QRunnable>
+#include <QFile>
+#include <windows.h>
+#include <shobjidl.h>
+#include <string>
+#include <QImageReader>
+#include <unordered_set>
 
 #include "includes/TinyExif.h"
 
@@ -23,10 +30,11 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    bool checkCoords(const std::string& filePath);
+    bool checkCoords(const std::string& filePath) const;
     void processFolder();
-    std::wstring OpenFolderDialog();
+    static std::wstring OpenFolderDialog();
     void deleteMarked();
+    void clearUi() const;
 
     std::vector<std::string> imagePaths;
     char delimiter = '\\';

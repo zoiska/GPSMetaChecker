@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28)
 project(GPSMetaChecker)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -18,28 +18,15 @@ find_package(Qt6 COMPONENTS
         Widgets
         REQUIRED)
 
-if (WIN32)
-    #set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/resources.rc")
-    add_executable(GPSMetaChecker WIN32 main.cpp ${app_icon_resource_windows}
-            includes/TinyEXIF.h
-            includes/TinyEXIF.cpp
-            includes/tinyxml2.cpp
-            includes/tinyxml2.h
-            mainwindow.cpp
-            mainwindow.h
-            mainwindow.ui
-    )
-else ()
-    add_executable(GPSMetaChecker main.cpp
-            includes/TinyEXIF.h
-            includes/TinyEXIF.cpp
-            includes/tinyxml2.cpp
-            includes/tinyxml2.h
-            mainwindow.cpp
-            mainwindow.h
-            mainwindow.ui
-    )
-endif ()
+add_executable(GPSMetaChecker main.cpp
+        includes/TinyEXIF.h
+        includes/TinyEXIF.cpp
+        includes/tinyxml2.cpp
+        includes/tinyxml2.h
+        mainwindow.cpp
+        mainwindow.h
+        mainwindow.ui
+)
 
 target_link_libraries(GPSMetaChecker PRIVATE
         Qt::Core

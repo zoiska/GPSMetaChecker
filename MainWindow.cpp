@@ -1,20 +1,11 @@
 #include "MainWindow.h"
-#include "ui_MainWIndow.h"
-#include <windows.h>
-#include <shobjidl.h>
-#include <iostream>
-#include <string>
-#include <QFile>
-#include <QString>
-#include <QImageReader>
+#include "ui_MainWindow.h"
 
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent), ui(new Ui::MainWindow) {
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
 
-    ui->label_output->clear();
-    ui->label_directory->clear();
+    clearUi();
 
     connect(ui->button_openFileDialog, &QPushButton::clicked, this, &MainWindow::processFolder);
     connect(ui->button_run, &QPushButton::clicked, this, &MainWindow::deleteMarked);
@@ -24,7 +15,7 @@ MainWindow::~MainWindow() {
     delete ui;
 }
 
-bool MainWindow::checkCoords(const std::string& filePath) {
+bool MainWindow::checkCoords(const std::string& filePath) const {
     std::ifstream file(filePath, std::ios::binary);
     if (!file.is_open()) {
         size_t delim_position = filePath.rfind(delimiter);
@@ -57,49 +48,52 @@ bool MainWindow::checkCoords(const std::string& filePath) {
 }
 
 void MainWindow::processFolder() {
+    clearUi();
+
     std::wstring wstr = OpenFolderDialog();
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     std::string folderPath = converter.to_bytes(wstr);
 
     ui->label_directory->setText(QString::fromStdString(folderPath));
 
-    if(std::filesystem::exists(folderPath)) {
-        for (const auto& entry : std::filesystem::directory_iterator(folderPath)) {
-            if (entry.is_regular_file()) {
-                const auto& filePath = entry.path().string();
-
-                std::string extension = entry.path().extension().string();
-                if (extension == ".jpg" || extension == ".jpeg" || extension == ".JPG" || extension == ".JPEG" || extension == ".png" || extension == ".PNG") {
-                    if (checkCoords(filePath)) {
-                        imagePaths.push_back(filePath);
-
-                        if (!filePath.empty()) {
-                            auto *item = new QListWidgetItem(QIcon(QString::fromStdString(filePath)), QString::fromStdString(filePath));
-                            item->setData(Qt::UserRole, QString::fromStdString(filePath));
-                            ui->listWidget->addItem(item);
-                        }
-                        else {
-                            size_t delim_position = filePath.rfind(delimiter);
-                            ui->label_output->setText(ui->label_output->text() + "Cannot image preview: \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"\n\n");
-                        }
-                        size_t delim_position = filePath.rfind(delimiter);
-                        ui->label_output->setText(ui->label_output->text() + "Adding for deletion: \"" + QString::fromStdString((delim_position != std::string::npos) ? filePath.substr(delim_position + 1) : "") + "\"\n\n");
-                    }
-                }
-            }
-        }
-    }
-    else {
+    if (!std::filesystem::exists(folderPath)) {
         ui->label_output->setText(ui->label_output->text() + "Error: Invalid path.\n");
+        return;
+    }
+
+    static const std::unordered_set<std::string> validExtensions = {".jpg", ".jpeg", ".png", ".JPG", ".JPEG", ".PNG"};
+
+    for (const auto& entry : std::filesystem::directory_iterator(folderPath)) {
+        if (!entry.is_regular_file()) continue;
+
+        std::string filePath = entry.path().string();
+        std::string extension = entry.path().extension().string();
+
+        if (validExtensions.find(extension) == validExtensions.end()) continue;
+        if (!checkCoords(filePath)) continue;
+
+        imagePaths.push_back(filePath);
+        size_t delim_position = filePath.rfind(delimiter);
+        QString fileName = (delim_position != std::string::npos) ? QString::fromStdString(filePath.substr(delim_position + 1)) : "";
+
+        if (!filePath.empty()) {
+            auto *item = new QListWidgetItem(QIcon(QString::fromStdString(filePath)), fileName);
+            item->setData(Qt::UserRole, QString::fromStdString(filePath));
+            ui->listWidget->addItem(item);
+        } else {
+            ui->label_output->setText(ui->label_output->text() + "Cannot preview image: \"" + fileName + "\"\n\n");
+        }
+
+        ui->label_output->setText(ui->label_output->text() + "Adding for deletion: \"" + fileName + "\"\n\n");
     }
 }
 
 std::wstring MainWindow::OpenFolderDialog() {
-    HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(hr)) return L"";
 
     IFileDialog* pFileDialog;
-    hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileDialog));
+    hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileDialog));
     if (FAILED(hr)) {
         CoUninitialize();
         return L"";
@@ -109,7 +103,7 @@ std::wstring MainWindow::OpenFolderDialog() {
     pFileDialog->GetOptions(&options);
     pFileDialog->SetOptions(options | FOS_PICKFOLDERS);
 
-    hr = pFileDialog->Show(NULL);
+    hr = pFileDialog->Show(nullptr);
     if (SUCCEEDED(hr)) {
         IShellItem* pItem;
         hr = pFileDialog->GetResult(&pItem);
@@ -143,4 +137,10 @@ void MainWindow::deleteMarked() {
     else {
         ui->label_output->setText(ui->label_output->text() + "Error: Vector is empty.\n");
     }
+}
+
+void MainWindow::clearUi() const {
+    ui->label_output->clear();
+    ui->label_directory->clear();
+    ui->listWidget->clear();
 }
